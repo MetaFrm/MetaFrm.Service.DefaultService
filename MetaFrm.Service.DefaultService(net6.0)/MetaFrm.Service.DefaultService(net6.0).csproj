@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -9,15 +9,26 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>MetaFrm.Service.DefaultService.net6.0</PackageId>
-    <Version>6.0.0</Version>
-    <Company>MetaFrm</Company>
-    <Copyright>Copyright 2022. DSUN all rights reserved.</Copyright>
-    <PackageProjectUrl>https://github.com/dsuny/MetaFrm.Service.DefaultService</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/dsuny/MetaFrm.Service.DefaultService</RepositoryUrl>
-    <PackageTags>meta;framework;dotnet;</PackageTags>
+    <Version>6.0.0.1</Version>
+    <Company>Meta Framework</Company>
+    <Copyright>Copyright 2022. dsun all rights reserved.</Copyright>
+    <PackageProjectUrl>https://github.com/MetaFrm/MetaFrm.Service.DefaultService</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MetaFrm/MetaFrm.Service.DefaultService</RepositoryUrl>
+    <PackageTags>meta;framework;dotnet;maui;</PackageTags>
     <Authors>dsun</Authors>
 	
 	<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ss:fffZ"))</SourceRevisionId>
+	
+	<Title>Meta Framework Service DefaultService</Title>
+	
+	<Product>Meta Framework Service DefaultService</Product>
+	
+	<Description>Meta Framework
+(Multi platform &amp; Meta management)</Description>
+	
+	<PackageIcon>icon.png</PackageIcon>
+	
+	<ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,7 +36,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MetaFrm.Core.net6.0" Version="6.0.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
