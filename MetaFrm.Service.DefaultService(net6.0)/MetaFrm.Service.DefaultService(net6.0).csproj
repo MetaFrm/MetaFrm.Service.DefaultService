@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>MetaFrm</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>MetaFrm.Service.DefaultService</AssemblyName>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>MetaFrm.Service.DefaultService.net6.0</PackageId>
+    <Version>6.0.0</Version>
+    <Company>MetaFrm</Company>
+    <Copyright>Copyright 2022. DSUN all rights reserved.</Copyright>
+    <PackageProjectUrl>https://github.com/dsuny/MetaFrm.Service.DefaultService</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dsuny/MetaFrm.Service.DefaultService</RepositoryUrl>
+    <PackageTags>meta;framework;dotnet;</PackageTags>
+    <Authors>dsun</Authors>
+	
+	<SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ss:fffZ"))</SourceRevisionId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\src\DefaultService.cs" Link="DefaultService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MetaFrm.Core.net6.0" Version="6.0.0.4" />
+  </ItemGroup>
+
+</Project>
