@@ -10,9 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      METAFRM_UPLOADMODULE_URL: "https://www.metafrm.net/Meta Framework Management System UploadModule.zip"
-      METAFRM_UPLOADMODULE_ZIP: "Meta Framework Management System UploadModule.zip"
-      METAFRM_UPLOADMODULE_FILE: "Meta Framework Management System UploadModule.dll"
+      METAFRM_UPLOADMODULE_URL: "https://download.metafrm.net/github/MetaFrameworkManagementSystemUploadModule.zip"
+      METAFRM_UPLOADMODULE_ZIP: "MetaFrameworkManagementSystemUploadModule.zip"
+      METAFRM_UPLOADMODULE_FILE: "MetaFrameworkManagementSystemUploadModule.dll"
       DLL_ID: 13
       DLL_PATH: "MetaFrm.Service.DefaultService(net6.0)/bin/Release/net6.0/MetaFrm.Service.DefaultService.dll"
 
