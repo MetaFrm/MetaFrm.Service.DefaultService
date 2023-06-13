@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <Compile Include="..\src\DefaultService.cs" Link="DefaultService.cs" />
+    <Compile Include="..\src\OutPutTable.cs" Link="OutPutTable.cs" />
   </ItemGroup>
 
   <ItemGroup>
