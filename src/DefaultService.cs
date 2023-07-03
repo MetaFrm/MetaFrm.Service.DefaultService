@@ -1,6 +1,4 @@
-﻿using MetaFrm.Api.Models;
-using MetaFrm.Diagnostics;
-using MetaFrm.Extensions;
+﻿using MetaFrm.Diagnostics;
 using System.Transactions;
 
 namespace MetaFrm.Service
@@ -11,7 +9,6 @@ namespace MetaFrm.Service
     public class DefaultService : IService
     {
         private readonly int serviceTimeout;
-        private readonly string databaseAdapterNamespace = "MetaFrm.Database.Adapter";
         private readonly Database.IAdapter databaseAdapter;
 
         /// <summary>
@@ -31,7 +28,7 @@ namespace MetaFrm.Service
                 this.serviceTimeout = 60000;
             }
 
-            databaseAdapter = (Database.IAdapter)Factory.CreateInstance(this.databaseAdapterNamespace);
+            databaseAdapter = (Database.IAdapter)Factory.CreateInstance("MetaFrm.Database.Adapter");
         }
 
         Response IService.Request(ServiceData serviceData)
@@ -44,9 +41,7 @@ namespace MetaFrm.Service
                     throw new Exception("Not MetaFrm.Service.DefaultService");
 
                 if (serviceData.Commands.TryGetValue("GetDatabaseConnectionNames", out _))
-                    return GetDatabaseConnectionNames(serviceData);
-
-                serviceData = this.GetMetaFrmDatabaseAdapter(serviceData);
+                    return GetDatabaseConnectionNames();
 
                 if (serviceData.TransactionScope)
                     using (TransactionScope transactionScope = new(TransactionScopeOption.Required, new TimeSpan(0, 0, 0, 0, serviceTimeout)))
@@ -283,12 +278,10 @@ namespace MetaFrm.Service
             //database.Connection.Open();
         }
 
-        Response GetDatabaseConnectionNames(ServiceData serviceData)
+        Response GetDatabaseConnectionNames()
         {
             Response response;
             Data.DataTable dataTable;
-            string? ATTRIBUTE_NAME;
-            string? ATTRIBUTE_VALUE = null;
             string[] databaseConnectionNames;
 
             if (this.databaseAdapter == null)
@@ -301,133 +294,20 @@ namespace MetaFrm.Service
             dataTable.DataColumns.Add(new("DatabaseNames", "System.String"));
             dataTable.DataColumns.Add(new("Database", "System.String"));
 
-            if (serviceData.Commands.TryGetValue(this.databaseAdapterNamespace, out Command? command))
+            databaseConnectionNames = this.databaseAdapter.ConnectionNames();
+
+            foreach (string tmp in databaseConnectionNames)
             {
-                response = this.GetConnectionNames(command);
+                Data.DataRow row = new();
+                row.Values.Add("DatabaseNames", new(tmp));
 
-                if (response.Status == Status.OK && response.DataSet != null && response.DataSet.DataTables.Count == 1 && response.DataSet.DataTables[0].DataRows.Count >= 4)
-                {
-                    foreach (var item in response.DataSet.DataTables[0].DataRows)
-                    {
-                        ATTRIBUTE_NAME = item.String("ATTRIBUTE_NAME");
-
-                        if (ATTRIBUTE_NAME != null && ATTRIBUTE_NAME.StartsWith("Providers"))
-                        {
-                            ATTRIBUTE_VALUE = item.String("ATTRIBUTE_VALUE");
-                            break;
-                        }
-
-                    }
-
-                    if (ATTRIBUTE_VALUE != null)
-                    {
-                        foreach (string tmp in ATTRIBUTE_VALUE.Split(','))
-                        {
-                            Data.DataRow row = new();
-                            row.Values.Add("DatabaseNames", new(tmp));
-
-                            dataTable.DataRows.Add(row);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                databaseConnectionNames = this.databaseAdapter.ConnectionNames();
-
-                foreach (string tmp in databaseConnectionNames)
-                {
-                    Data.DataRow row = new();
-                    row.Values.Add("DatabaseNames", new(tmp));
-
-                    dataTable.DataRows.Add(row);
-                }
+                dataTable.DataRows.Add(row);
             }
 
             response.DataSet = new();
             response.DataSet.DataTables.Add(dataTable);
 
             return response;
-        }
-
-
-        ServiceData GetMetaFrmDatabaseAdapter(ServiceData serviceData)
-        {
-            Response response;
-            string? ATTRIBUTE_NAME;
-            string? ATTRIBUTE_VALUE;
-            string? accessKey = null;
-            decimal? PROJECT_ID;
-            decimal? SERVICE_ID;
-            string PROJECT_ID_SERVICE_ID;
-
-
-            if (serviceData.Commands.TryGetValue(this.databaseAdapterNamespace, out Command? command))
-            {
-                serviceData.Commands.Remove(this.databaseAdapterNamespace);
-
-                PROJECT_ID = (decimal?)command.GetValue("PROJECT_ID", 0);
-                SERVICE_ID = (decimal?)command.GetValue("SERVICE_ID", 0);
-
-                response = this.GetConnectionNames(command);
-
-                if (response.Status == Status.OK && response.DataSet != null && response.DataSet.DataTables.Count == 1 && response.DataSet.DataTables[0].DataRows.Count >= 4)
-                {
-                    PROJECT_ID_SERVICE_ID = $"{command.GetValue("PROJECT_ID", 0)}_{command.GetValue("SERVICE_ID", 0)}";
-
-                    foreach (var item in response.DataSet.DataTables[0].DataRows)
-                    {
-                        ATTRIBUTE_NAME = item.String("ATTRIBUTE_NAME");
-
-                        if (ATTRIBUTE_NAME != null)
-                        {
-                            ATTRIBUTE_VALUE = item.String("ATTRIBUTE_VALUE");
-
-                            if (ATTRIBUTE_NAME.StartsWith("ConnectionString"))
-                            {
-                                if (PROJECT_ID != null && SERVICE_ID != null)
-                                    accessKey = new ProjectServiceBase() { ProjectID = (decimal)PROJECT_ID, ServiceID = (decimal)SERVICE_ID }.AesEncryptAndSerialize();
-
-                                if (accessKey != null && ATTRIBUTE_VALUE != null)
-                                    Config.Client.SetAttribute(this.databaseAdapterNamespace
-                                        , $"{item.String("ATTRIBUTE_NAME")}{(ATTRIBUTE_NAME.Contains('.') ? "" : ".")}{PROJECT_ID_SERVICE_ID}"
-                                        , ATTRIBUTE_VALUE.AesDecryptorToBase64String(accessKey, "MetaFrm") ?? "");
-                                else
-                                    Config.Client.SetAttribute(this.databaseAdapterNamespace
-                                        , $"{item.String("ATTRIBUTE_NAME")}{(ATTRIBUTE_NAME.Contains('.') ? "" : ".")}{PROJECT_ID_SERVICE_ID}"
-                                        , ATTRIBUTE_VALUE ?? "");
-                            }
-                            else
-                                Config.Client.SetAttribute(this.databaseAdapterNamespace
-                                    , $"{item.String("ATTRIBUTE_NAME")}{(ATTRIBUTE_NAME.Contains('.') ? "" : ".")}{PROJECT_ID_SERVICE_ID}"
-                                    , ATTRIBUTE_VALUE ?? "");
-                        }
-                    }
-
-                    foreach (var item in serviceData.Commands.Values)
-                        item.ConnectionName = $"{PROJECT_ID_SERVICE_ID}{item.ConnectionName}";
-                }
-            }
-
-            return serviceData;
-        }
-
-
-        Response GetConnectionNames(Command command)
-        {
-            decimal? PROJECT_ID;
-            decimal? SERVICE_ID;
-
-            PROJECT_ID = (decimal?)command.GetValue("PROJECT_ID", 0);
-            SERVICE_ID = (decimal?)command.GetValue("SERVICE_ID", 0);
-
-            ServiceData data = new();
-            data[this.databaseAdapterNamespace].CommandText = command.CommandText;
-            data[this.databaseAdapterNamespace].AddParameter("PROJECT_ID", Database.DbType.Decimal, 18, PROJECT_ID);
-            data[this.databaseAdapterNamespace].AddParameter("SERVICE_ID", Database.DbType.Decimal, 18, SERVICE_ID);
-            data[this.databaseAdapterNamespace].AddParameter("NAMESPACE", Database.DbType.NVarChar, 6000, command.GetValue("NAMESPACE", 0));
-
-            return this.Excute(data);
         }
     }
 }
