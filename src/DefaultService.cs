@@ -1,4 +1,6 @@
-﻿using MetaFrm.Diagnostics;
+﻿using MetaFrm.Api.Models;
+using MetaFrm.Diagnostics;
+using MetaFrm.Extensions;
 using System.Transactions;
 
 namespace MetaFrm.Service
@@ -38,11 +40,11 @@ namespace MetaFrm.Service
 
             try
             {
-                if (serviceData.ServiceName == null && serviceData.ServiceName == "GetDatabaseConnectionNames")
-                    return GetDatabaseConnectionNames(serviceData);
-
                 if (serviceData.ServiceName == null || !serviceData.ServiceName.Equals("MetaFrm.Service.DefaultService"))
                     throw new Exception("Not MetaFrm.Service.DefaultService");
+
+                if (serviceData.Commands.TryGetValue("GetDatabaseConnectionNames", out _))
+                    return GetDatabaseConnectionNames(serviceData);
 
                 serviceData = this.GetMetaFrmDatabaseAdapter(serviceData);
 
@@ -354,7 +356,7 @@ namespace MetaFrm.Service
             Response response;
             string? ATTRIBUTE_NAME;
             string? ATTRIBUTE_VALUE;
-            string? accessKey;
+            string? accessKey = null;
             decimal? PROJECT_ID;
             decimal? SERVICE_ID;
             string PROJECT_ID_SERVICE_ID;
@@ -383,7 +385,8 @@ namespace MetaFrm.Service
 
                             if (ATTRIBUTE_NAME.StartsWith("ConnectionString"))
                             {
-                                accessKey = (string?)Config.Client.GetAttribute($"{PROJECT_ID}.{SERVICE_ID}.AccessKey");
+                                if (PROJECT_ID != null && SERVICE_ID != null)
+                                    accessKey = new ProjectServiceBase() { ProjectID = (decimal)PROJECT_ID, ServiceID = (decimal)SERVICE_ID }.AesEncryptAndSerialize();
 
                                 if (accessKey != null && ATTRIBUTE_VALUE != null)
                                     Config.Client.SetAttribute(this.databaseAdapterNamespace
@@ -402,12 +405,7 @@ namespace MetaFrm.Service
                     }
 
                     foreach (var item in serviceData.Commands.Values)
-                    {
-                        if (item.ConnectionName.Contains('.'))
-                            item.ConnectionName = $"{item.ConnectionName}{PROJECT_ID_SERVICE_ID}";
-                        else
-                            item.ConnectionName = $"{item.ConnectionName}.{PROJECT_ID_SERVICE_ID}";
-                    }
+                        item.ConnectionName = $"{PROJECT_ID_SERVICE_ID}{item.ConnectionName}";
                 }
             }
 
