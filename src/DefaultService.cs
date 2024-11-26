@@ -1,4 +1,4 @@
-﻿using MetaFrm.Diagnostics;
+﻿using Microsoft.Extensions.Logging;
 using System.Transactions;
 
 namespace MetaFrm.Service
@@ -24,7 +24,7 @@ namespace MetaFrm.Service
             }
             catch (Exception exception)
             {
-                DiagnosticsTool.MyTrace(exception);
+                Factory.Logger.LogError(exception, "{Message}", exception.Message);
                 this.serviceTimeout = 60000;
             }
 
@@ -56,12 +56,12 @@ namespace MetaFrm.Service
             }
             catch (MetaFrmException exception)
             {
-                DiagnosticsTool.MyTrace(exception);
+                Factory.Logger.LogError(exception, "{Message}", exception.Message);
                 return new Response(exception);
             }
             catch (Exception exception)
             {
-                DiagnosticsTool.MyTrace(exception);
+                Factory.Logger.LogError(exception, "{Message}", exception.Message);
                 return new Response(exception);
             }
 
@@ -84,13 +84,13 @@ namespace MetaFrm.Service
                 DataSet = new Data.DataSet()
             };
 
-            databaseList = new();
+            databaseList = [];
 
             try
             {
                 this.CreateAndOpenDatabase(databaseList, serviceData);
 
-                outPutTable = new();
+                outPutTable = [];
                 dataSet = new();//결과 저장 DataSet
 
                 tableCount = 0;
@@ -240,7 +240,7 @@ namespace MetaFrm.Service
                     }
                     catch (Exception exception)
                     {
-                        DiagnosticsTool.MyTrace(exception);
+                        Factory.Logger.LogError(exception, "{Message}", exception.Message);
                     }
             }
 

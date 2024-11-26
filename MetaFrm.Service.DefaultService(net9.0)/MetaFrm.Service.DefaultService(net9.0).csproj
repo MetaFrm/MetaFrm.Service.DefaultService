@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>MetaFrm</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>MetaFrm.Service.DefaultService</AssemblyName>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <PackageId>MetaFrm.Service.DefaultService.net6.0</PackageId>
-    <Version>6.0.3.44</Version>
+    <PackageId>MetaFrm.Service.DefaultService.net9.0</PackageId>
+    <Version>9.0.4.1</Version>
     <Company>Meta Framework</Company>
     <Copyright>Copyright 2024. dsun all rights reserved.</Copyright>
     <PackageProjectUrl>https://github.com/MetaFrm/MetaFrm.Service.DefaultService</PackageProjectUrl>
@@ -31,7 +31,7 @@
     <Content Include="icon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="MetaFrm.Core.net6.0" Version="6.0.3.44" />
+    <PackageReference Include="MetaFrm.Core.net9.0" Version="9.0.4.1" />
   </ItemGroup>
   <ItemGroup>
     <None Update="icon.png">
