@@ -8,7 +8,7 @@ on:
 env:
   DLL_ID: ${{secrets.DLL_ID_9}} # NET버전
   UPLOAD_MODURE: "Y"
-  PUSH_NUGET: "N"
+  PUSH_NUGET: "Y"
   PASSWORD: ${{secrets.PASSWORD}}
 
 jobs:
@@ -17,8 +17,8 @@ jobs:
     env:
       DLL_PATH: "${{vars.NAMESPACE}}(net9.0)/bin/Release/net9.0/${{vars.NAMESPACE}}.dll" # NET버전
       PROJECT_PATH: "${{vars.NAMESPACE}}(net9.0)" # NET버전
-      METAFRM_UPLOADMODULE_URL: "https://download.metafrm.net/github/MetaFrameworkManagementSystemUploadModule8.0.zip" # NET버전
-      METAFRM_UPLOADMODULE_ZIP: "temp/MetaFrameworkManagementSystemUploadModule8.0.zip" # NET버전
+      METAFRM_UPLOADMODULE_URL: "https://download.metafrm.net/github/MetaFrameworkManagementSystemUploadModule9.0.zip" # NET버전
+      METAFRM_UPLOADMODULE_ZIP: "temp/MetaFrameworkManagementSystemUploadModule9.0.zip" # NET버전
       METAFRM_UPLOADMODULE_FILE: "temp/MetaFrameworkManagementSystemUploadModule.dll"
 
     steps:
