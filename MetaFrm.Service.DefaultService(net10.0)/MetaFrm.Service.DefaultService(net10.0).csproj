@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>MetaFrm</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>MetaFrm.Service.DefaultService</AssemblyName>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <PackageId>MetaFrm.Service.DefaultService.net8.0</PackageId>
-    <Version>8.0.4.70</Version>
+    <PackageId>MetaFrm.Service.DefaultService.net10.0</PackageId>
+    <Version>10.0.0.0-beta1</Version>
     <Company>Meta Framework</Company>
     <Copyright>Copyright 2025. dsun all rights reserved.</Copyright>
     <PackageProjectUrl>https://github.com/MetaFrm/MetaFrm.Service.DefaultService</PackageProjectUrl>
@@ -35,7 +35,7 @@
     <Content Include="icon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="MetaFrm.Core.net8.0" Version="8.0.4.70" />
+    <PackageReference Include="MetaFrm.Core.net10.0" Version="10.0.0.0-beta1" />
   </ItemGroup>
   <ItemGroup>
     <None Include="icon.png">

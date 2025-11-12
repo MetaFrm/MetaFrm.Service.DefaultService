@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.1.32319.34
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11205.157 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2757791F-961C-4618-A304-06F35CAF0E32}"
 	ProjectSection(SolutionItems) = preProject
@@ -13,6 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{CBB0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{DD9F42AE-68E3-4B48-A1B1-5614D9F8A996}"
 	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build_10.0.yml = .github\workflows\build_10.0.yml
 		.github\workflows\build_8.0.yml = .github\workflows\build_8.0.yml
 		.github\workflows\build_9.0.yml = .github\workflows\build_9.0.yml
 	EndProjectSection
@@ -28,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetaFrm.Service.DefaultServ
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaFrm.Service.DefaultService(net9.0)", "MetaFrm.Service.DefaultService(net9.0)\MetaFrm.Service.DefaultService(net9.0).csproj", "{E3F3C9F3-F7E9-42BA-B84E-9621EE6ECA7B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaFrm.Service.DefaultService(net10.0)", "MetaFrm.Service.DefaultService(net10.0)\MetaFrm.Service.DefaultService(net10.0).csproj", "{3DD02CA1-FD1F-CC29-C9A3-FABF5DA8CC59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +45,10 @@ Global
 		{E3F3C9F3-F7E9-42BA-B84E-9621EE6ECA7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E3F3C9F3-F7E9-42BA-B84E-9621EE6ECA7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E3F3C9F3-F7E9-42BA-B84E-9621EE6ECA7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DD02CA1-FD1F-CC29-C9A3-FABF5DA8CC59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DD02CA1-FD1F-CC29-C9A3-FABF5DA8CC59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DD02CA1-FD1F-CC29-C9A3-FABF5DA8CC59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DD02CA1-FD1F-CC29-C9A3-FABF5DA8CC59}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
