@@ -39,30 +39,30 @@ jobs:
       if: runner.os == 'Windows'
       run: dotnet workload install maui --ignore-failed-sources
       
-    # - name: mkdir temp (Windows)
-    #   if: runner.os == 'Windows'
-    #   run: mkdir temp
+    - name: mkdir temp (Windows)
+      if: runner.os == 'Windows'
+      run: mkdir temp
 
 
-    # - name: Download Upload Module
-    #   if: runner.os != 'Windows'
-    #   run: wget -d "${{env.METAFRM_UPLOADMODULE_URL}}" -P temp
+    - name: Download Upload Module
+      if: runner.os != 'Windows'
+      run: wget -d "${{env.METAFRM_UPLOADMODULE_URL}}" -P temp
 
-    # - name: Download Upload Module (Windows)
-    #   if: runner.os == 'Windows'
-    #   run: curl ${{env.METAFRM_UPLOADMODULE_URL}} --output "${{env.METAFRM_UPLOADMODULE_ZIP}}"
+    - name: Download Upload Module (Windows)
+      if: runner.os == 'Windows'
+      run: curl ${{env.METAFRM_UPLOADMODULE_URL}} --output "${{env.METAFRM_UPLOADMODULE_ZIP}}"
       
-    # - name: Download unzip.exe (Windows)
-    #   if: runner.os == 'Windows'
-    #   run: curl http://stahlworks.com/dev/unzip.exe --output temp/unzip.exe
+    - name: Download unzip.exe (Windows)
+      if: runner.os == 'Windows'
+      run: curl http://stahlworks.com/dev/unzip.exe --output temp/unzip.exe
 
-    # - name: Unzip
-    #   if: runner.os != 'Windows'
-    #   run: unzip "${{env.METAFRM_UPLOADMODULE_ZIP}}" -d temp
+    - name: Unzip
+      if: runner.os != 'Windows'
+      run: unzip "${{env.METAFRM_UPLOADMODULE_ZIP}}" -d temp
       
-    # - name: Unzip (Windows)
-    #   if: runner.os == 'Windows'
-    #   run: temp\unzip.exe "${{env.METAFRM_UPLOADMODULE_ZIP}}" -d temp
+    - name: Unzip (Windows)
+      if: runner.os == 'Windows'
+      run: temp\unzip.exe "${{env.METAFRM_UPLOADMODULE_ZIP}}" -d temp
 
 
     - name: Restore dependencies
@@ -102,13 +102,13 @@ jobs:
       run: dotnet "${{env.METAFRM_UPLOADMODULE_FILE}}" "${{secrets.METAFRM_UPLOADMODULE_ACCESSKEY}}" "${{github.event.pusher.email}}^${{env.PASSWORD}}" "notification" "Test Release Fail !!" "${{env.DLL_PATH}}" "${{vars.NAMESPACE}}"
       
 
-    # - name: Upload Module
-    #   id: ST6
-    #   if: env.UPLOAD_MODURE == 'Y'
-    #   run: dotnet "${{env.METAFRM_UPLOADMODULE_FILE}}" "${{secrets.METAFRM_UPLOADMODULE_ACCESSKEY}}" "${{github.event.pusher.email}}^${{env.PASSWORD}}" "upload" ${{env.DLL_ID}} "${{env.DLL_PATH}}" "${{vars.NAMESPACE}}"
-    # - name: if failure
-    #   if: ${{ failure() && steps.ST1.outcome != 'failure' && steps.ST2.outcome != 'failure' && steps.ST3.outcome != 'failure' && steps.ST4.outcome != 'failure' && steps.ST5.outcome != 'failure' }}
-    #   run: dotnet "${{env.METAFRM_UPLOADMODULE_FILE}}" "${{secrets.METAFRM_UPLOADMODULE_ACCESSKEY}}" "${{github.event.pusher.email}}^${{env.PASSWORD}}" "notification" "Upload Module Fail !!" "${{env.DLL_PATH}}" "${{vars.NAMESPACE}}"
+    - name: Upload Module
+      id: ST6
+      if: env.UPLOAD_MODURE == 'Y'
+      run: dotnet "${{env.METAFRM_UPLOADMODULE_FILE}}" "${{secrets.METAFRM_UPLOADMODULE_ACCESSKEY}}" "${{github.event.pusher.email}}^${{env.PASSWORD}}" "upload" ${{env.DLL_ID}} "${{env.DLL_PATH}}" "${{vars.NAMESPACE}}"
+    - name: if failure
+      if: ${{ failure() && steps.ST1.outcome != 'failure' && steps.ST2.outcome != 'failure' && steps.ST3.outcome != 'failure' && steps.ST4.outcome != 'failure' && steps.ST5.outcome != 'failure' }}
+      run: dotnet "${{env.METAFRM_UPLOADMODULE_FILE}}" "${{secrets.METAFRM_UPLOADMODULE_ACCESSKEY}}" "${{github.event.pusher.email}}^${{env.PASSWORD}}" "notification" "Upload Module Fail !!" "${{env.DLL_PATH}}" "${{vars.NAMESPACE}}"
 
 
     - name: Pack nugets
@@ -128,5 +128,5 @@ jobs:
       run: dotnet "${{env.METAFRM_UPLOADMODULE_FILE}}" "${{secrets.METAFRM_UPLOADMODULE_ACCESSKEY}}" "${{github.event.pusher.email}}^${{env.PASSWORD}}" "notification" "Push to NuGet Fail !!" "${{env.DLL_PATH}}" "${{vars.NAMESPACE}}"
       
 
-    # - name: Completed
-    #   run: dotnet "${{env.METAFRM_UPLOADMODULE_FILE}}" "${{secrets.METAFRM_UPLOADMODULE_ACCESSKEY}}" "${{github.event.pusher.email}}^${{env.PASSWORD}}" "notification" "CI/CD Completed !!" "${{env.DLL_PATH}}" "${{vars.NAMESPACE}}"
+    - name: Completed
+      run: dotnet "${{env.METAFRM_UPLOADMODULE_FILE}}" "${{secrets.METAFRM_UPLOADMODULE_ACCESSKEY}}" "${{github.event.pusher.email}}^${{env.PASSWORD}}" "notification" "CI/CD Completed !!" "${{env.DLL_PATH}}" "${{vars.NAMESPACE}}"
