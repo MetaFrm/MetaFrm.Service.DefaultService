@@ -24,7 +24,7 @@ namespace MetaFrm.Service
             }
             catch (Exception exception)
             {
-                Factory.Logger.LogError(exception, "{Message}", exception.Message);
+                Factory.Logger.LogError(exception, "DefaultService : {Message}", exception.Message);
                 this.serviceTimeout = 60000;
             }
 
@@ -37,7 +37,7 @@ namespace MetaFrm.Service
 
             try
             {
-                if (serviceData.ServiceName == null || !serviceData.ServiceName.Equals("MetaFrm.Service.DefaultService"))
+                if (serviceData.ServiceName == null || serviceData.ServiceName != "MetaFrm.Service.DefaultService")
                     throw new Exception("Not MetaFrm.Service.DefaultService");
 
                 if (serviceData.Commands.TryGetValue("GetDatabaseConnectionNames", out _))
@@ -46,38 +46,37 @@ namespace MetaFrm.Service
                 if (serviceData.TransactionScope)
                     using (TransactionScope transactionScope = new(TransactionScopeOption.Required, new TimeSpan(0, 0, 0, 0, serviceTimeout)))
                     {
-                        response = this.Excute(serviceData);
+                        response = this.Execute(serviceData);
 
                         if (response.Status == Status.OK)
                             transactionScope.Complete();
                     }
                 else
-                    response = this.Excute(serviceData);
+                    response = this.Execute(serviceData);
+
+                return response;
             }
             catch (MetaFrmException exception)
             {
-                Factory.Logger.LogError(exception, "{Message}", exception.Message);
+                Factory.Logger.LogError(exception, "Request(MetaFrmException) : {Message}", exception.Message);
                 return new Response(exception);
             }
             catch (Exception exception)
             {
-                Factory.Logger.LogError(exception, "{Message}", exception.Message);
+                Factory.Logger.LogError(exception, "Request(Exception) : {Message}", exception.Message);
                 return new Response(exception);
             }
-
-            return response;
         }
 
-        Response Excute(ServiceData serviceData)
+        Response Execute(ServiceData serviceData)
         {
+            Response response;
             Dictionary<string, Database.IDatabase> databaseList;
-            Database.IDatabase database;
-            Response? response;
+            List<OutPut> outPuts;
             System.Data.DataSet dataSet;
-            System.Data.DataTable dataTable;
             int tableCount;
-
-            List<OutPutTable> outPutTable;
+            Command command;
+            Database.IDatabase database;
 
             response = new()
             {
@@ -85,149 +84,59 @@ namespace MetaFrm.Service
             };
 
             databaseList = [];
+            outPuts = [];
+            dataSet = new();//결과 저장 DataSet
+            tableCount = 0;
 
             try
             {
-                this.CreateAndOpenDatabase(databaseList, serviceData);
+                this.CreateDatabase(databaseList, serviceData);
 
-                outPutTable = [];
-                dataSet = new();//결과 저장 DataSet
-
-                tableCount = 0;
-                foreach (string table in serviceData.Commands.Keys)
+                foreach (string commandName in serviceData.Commands.Keys)
                 {
-                    database = databaseList[serviceData[table].ConnectionName];
+                    command = serviceData[commandName];
+                    database = databaseList[command.ConnectionName];
 
-                    database.Command.CommandType = serviceData.Commands[table].CommandType;
+                    database.Command.CommandType = command.CommandType;
 
                     //파라미터 생성
                     if (database.Command.CommandType != System.Data.CommandType.Text)
-                        foreach (string dataColumn in serviceData.Commands[table].Parameters.Keys)
-                        {
-                            System.Data.Common.DbParameter dbParameter;
-                            Database.DbType dbType;
+                        this.PrepareParameters(database, commandName, command, outPuts);
 
-                            dbType = serviceData.Commands[table].Parameters[dataColumn].DbType;
-
-                            dbParameter = database.AddParameter(dataColumn, dbType, serviceData.Commands[table].Parameters[dataColumn].Size);
-
-                            //Target이 있는 파라미터이면
-                            if (serviceData.Commands[table].Parameters[dataColumn].TargetCommandName != null)
-                            {
-                                dbParameter.Direction = System.Data.ParameterDirection.InputOutput;
-                                outPutTable.Add(new OutPutTable()
-                                {
-                                    SourceTableName = table,
-                                    SourceParameterName = dataColumn,
-                                    TargetTableName = serviceData.Commands[table].Parameters[dataColumn].TargetCommandName,
-                                    TargetParameterName = serviceData.Commands[table].Parameters[dataColumn].TargetParameterName
-                                });
-                            }
-                            else
-                                dbParameter.Direction = System.Data.ParameterDirection.Input;
-                        }
-
-                    for (int i = 0; i < serviceData[table].Values.Count; i++)
+                    for (int i = 0; i < command.Values.Count; i++)
                     {
                         //파라미터 값 입력
                         if (database.Command.CommandType != System.Data.CommandType.Text)
-                            foreach (string dataColumn in serviceData.Commands[table].Parameters.Keys)
-                            {
-                                OutPutTable[] dataRows;
-
-                                dataRows = outPutTable.Where(x => x.TargetTableName == table && x.TargetParameterName == dataColumn).ToArray();
-
-                                //_OutPutTable에 있는 항목인지
-                                if (dataRows.Length > 0)
-                                {
-                                    if (dataRows[0].Value == null)
-                                        database.Command.Parameters[dataColumn].Value = DBNull.Value;
-                                    else
-                                        database.Command.Parameters[dataColumn].Value = dataRows[0].Value;
-                                }
-                                else
-                                {
-                                    object? value = serviceData[table].GetValue(dataColumn, i);
-
-                                    if (value == null)
-                                        database.Command.Parameters[dataColumn].Value = DBNull.Value;
-                                    else
-                                        database.Command.Parameters[dataColumn].Value = serviceData[table].GetValue(dataColumn, i);
-                                }
-                            }
+                            this.SetParameterValues(database, commandName, command, outPuts, i);
 
                         //프로시져명
                         switch (database.Command.CommandType)
                         {
                             case System.Data.CommandType.Text:
-                                database.Command.CommandText = (string?)serviceData[table].GetValue("Query", i);
+                                database.Command.CommandText = (string?)command.GetValue("Query", i);
                                 break;
                             case System.Data.CommandType.StoredProcedure:
-                                database.Command.CommandText = serviceData[table].CommandText;
+                                database.Command.CommandText = command.CommandText;
                                 break;
                             case System.Data.CommandType.TableDirect:
                                 break;
                         }
 
+                        //실행 및 결과 취합
                         database.DataAdapter.Fill(dataSet);
+                        this.ExtractTablesToResponse(response, dataSet, ref tableCount);
 
-                        while (dataSet.Tables.Count != 0)
-                        {
-                            dataTable = dataSet.Tables[0];
-                            dataTable.TableName = tableCount.ToString();
-                            dataSet.Tables.Remove(dataTable);
-
-                            response.DataSet.DataTables.Add(new Data.DataTable(dataTable));
-
-                            tableCount += 1;
-                        }
-
-                        foreach (System.Data.Common.DbParameter dbParameter in database.Command.Parameters)
-                            if (dbParameter.Direction == System.Data.ParameterDirection.InputOutput)
-                            {
-                                OutPutTable[] dataRows;
-
-                                dataRows = outPutTable.Where(x => x.SourceTableName == table && x.SourceParameterName == dbParameter.ParameterName).ToArray();
-
-                                if (dataRows.Length > 0)
-                                    dataRows[0].Value = dbParameter.Value;
-
-                            }
+                        // Output 파라미터 수집
+                        this.CollectOutputParameters(database, commandName, outPuts);
                     }
 
                     database.Command.Parameters.Clear();
                 }
 
-                if (response.DataSet.DataTables.Count < 1 && outPutTable.Count < 1)
+                if (response.DataSet.DataTables.Count < 1 && outPuts.Count < 1)
                     response.DataSet = null;
-                else
-                {
-                    if (outPutTable.Count > 0)
-                    {
-                        Data.DataTable outPutTable1;
-
-                        outPutTable1 = new Data.DataTable();
-                        outPutTable1.DataColumns.Add(new Data.DataColumn("SourceTableName", "System.String"));
-                        outPutTable1.DataColumns.Add(new Data.DataColumn("SourceParameterName", "System.String"));
-                        outPutTable1.DataColumns.Add(new Data.DataColumn("TargetTableName", "System.String"));
-                        outPutTable1.DataColumns.Add(new Data.DataColumn("TargetParameterName", "System.String"));
-                        outPutTable1.DataColumns.Add(new Data.DataColumn("Value", "System.String"));
-
-                        foreach (OutPutTable dataRow in outPutTable)
-                        {
-                            Data.DataRow dataRow1 = new();
-                            dataRow1.Values.Add("SourceTableName", new Data.DataValue(dataRow.SourceTableName));
-                            dataRow1.Values.Add("SourceParameterName", new Data.DataValue(dataRow.SourceParameterName));
-                            dataRow1.Values.Add("TargetTableName", new Data.DataValue(dataRow.TargetTableName));
-                            dataRow1.Values.Add("TargetParameterName", new Data.DataValue(dataRow.TargetParameterName));
-                            dataRow1.Values.Add("Value", new Data.DataValue(dataRow.Value?.ToString()));
-
-                            outPutTable1.DataRows.Add(dataRow1);
-                        }
-
-                        response.DataSet.DataTables.Add(outPutTable1);
-                    }
-                }
+                else if (outPuts.Count > 0)
+                    this.AppendOutPutsToResponse(response, outPuts);
 
                 response.Status = Status.OK;
             }
@@ -240,14 +149,98 @@ namespace MetaFrm.Service
                     }
                     catch (Exception exception)
                     {
-                        Factory.Logger.LogError(exception, "{Message}", exception.Message);
+                        Factory.Logger.LogError(exception, "Execute : {Message}", exception.Message);
                     }
             }
 
             return response;
         }
+        private void PrepareParameters(Database.IDatabase database, string table, Command command, List<OutPut> outPuts)
+        {
+            foreach (string dataColumn in command.Parameters.Keys)
+            {
+                Service.Parameter parameter = command.Parameters[dataColumn];
+                System.Data.Common.DbParameter dbParameter = database.AddParameter(dataColumn, parameter.DbType, parameter.Size);
 
-        private void CreateAndOpenDatabase(Dictionary<string, Database.IDatabase> databaseList, ServiceData serviceData)
+                if (parameter.TargetCommandName != null)
+                {
+                    dbParameter.Direction = System.Data.ParameterDirection.InputOutput;
+                    outPuts.Add(new OutPut()
+                    {
+                        SourceTableName = table,
+                        SourceParameterName = dataColumn,
+                        TargetTableName = parameter.TargetCommandName,
+                        TargetParameterName = parameter.TargetParameterName
+                    });
+                }
+                else
+                {
+                    dbParameter.Direction = System.Data.ParameterDirection.Input;
+                }
+            }
+        }
+        private void SetParameterValues(Database.IDatabase database, string table, Command command, List<OutPut> outPuts, int rowIndex)
+        {
+            foreach (string dataColumn in command.Parameters.Keys)
+            {
+                OutPut[] dataRows = outPuts.Where(x => x.TargetTableName == table && x.TargetParameterName == dataColumn).ToArray();
+
+                if (dataRows.Length > 0)
+                    database.Command.Parameters[dataColumn].Value = dataRows[0].Value ?? DBNull.Value;
+                else
+                    database.Command.Parameters[dataColumn].Value = command.GetValue(dataColumn, rowIndex) ?? DBNull.Value;
+            }
+        }
+        private void ExtractTablesToResponse(Response response, System.Data.DataSet dataSet, ref int tableCount)
+        {
+            foreach (System.Data.DataTable dataTable in dataSet.Tables)
+            {
+                dataTable.TableName = tableCount.ToString();
+
+                response.DataSet?.DataTables.Add(new Data.DataTable(dataTable));
+                tableCount += 1;
+            }
+
+            dataSet.Tables.Clear();
+        }
+        private void CollectOutputParameters(Database.IDatabase database, string table, List<OutPut> outPuts)
+        {
+            foreach (System.Data.Common.DbParameter dbParameter in database.Command.Parameters)
+            {
+                if (dbParameter.Direction == System.Data.ParameterDirection.InputOutput)
+                {
+                    OutPut[] dataRows = outPuts.Where(x => x.SourceTableName == table && x.SourceParameterName == dbParameter.ParameterName).ToArray();
+                    if (dataRows.Length > 0)
+                        dataRows[0].Value = dbParameter.Value;
+                }
+            }
+        }
+        private void AppendOutPutsToResponse(Response response, List<OutPut> outPuts)
+        {
+            Data.DataTable outPutTable = new();
+            outPutTable.DataColumns.Add(new Data.DataColumn("SourceTableName", "System.String"));
+            outPutTable.DataColumns.Add(new Data.DataColumn("SourceParameterName", "System.String"));
+            outPutTable.DataColumns.Add(new Data.DataColumn("TargetTableName", "System.String"));
+            outPutTable.DataColumns.Add(new Data.DataColumn("TargetParameterName", "System.String"));
+            outPutTable.DataColumns.Add(new Data.DataColumn("Value", "System.String"));
+
+            foreach (OutPut dataRow in outPuts)
+            {
+                Data.DataRow r = new();
+                r.Values.Add("SourceTableName", new Data.DataValue(dataRow.SourceTableName));
+                r.Values.Add("SourceParameterName", new Data.DataValue(dataRow.SourceParameterName));
+                r.Values.Add("TargetTableName", new Data.DataValue(dataRow.TargetTableName));
+                r.Values.Add("TargetParameterName", new Data.DataValue(dataRow.TargetParameterName));
+                r.Values.Add("Value", new Data.DataValue(dataRow.Value?.ToString()));
+
+                outPutTable.DataRows.Add(r);
+            }
+
+            response.DataSet?.DataTables.Add(outPutTable);
+        }
+
+
+        private void CreateDatabase(Dictionary<string, Database.IDatabase> databaseList, ServiceData serviceData)
         {
             Database.IDatabase? database;
             string databaseName;
@@ -256,26 +249,22 @@ namespace MetaFrm.Service
             for (int i = 0; i < serviceData.Count; i++)
             {
                 databaseName = serviceData[i].ConnectionName;
-                if (!databaseList.ContainsKey(databaseName))
+                if (!databaseList.TryGetValue(databaseName, out var value) || value == null)
                 {
-                    database = this.CreateAndOpenDatabase(databaseName);
+                    database = this.CreateDatabase(databaseName);
 
                     if (database != null)
-                        databaseList.Add(databaseName, database);
+                        databaseList.TryAdd(databaseName, database);
                 }
             }
         }
 
-        private Database.IDatabase? CreateAndOpenDatabase(string connectionName)
+        private Database.IDatabase? CreateDatabase(string connectionName)
         {
             if (connectionName == null)
                 return null;
 
-            if (this.databaseAdapter == null)
-                throw new MetaFrmException("DatabaseAdapter is null");
-
             return this.databaseAdapter.CreateDatabase(connectionName);
-            //database.Connection.Open();
         }
 
         Response GetDatabaseConnectionNames()
@@ -283,9 +272,6 @@ namespace MetaFrm.Service
             Response response;
             Data.DataTable dataTable;
             string[] databaseConnectionNames;
-
-            if (this.databaseAdapter == null)
-                throw new MetaFrmException("DatabaseAdapter is null");
 
             response = new();
 

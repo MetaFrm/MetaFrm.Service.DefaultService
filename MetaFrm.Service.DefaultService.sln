@@ -6,7 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2757791F-961C-4618-A304-06F35CAF0E32}"
 	ProjectSection(SolutionItems) = preProject
 		src\DefaultService.cs = src\DefaultService.cs
-		src\OutPutTable.cs = src\OutPutTable.cs
+		src\OutPut.cs = src\OutPut.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{CBB0B7D3-1C06-4F29-B312-05710FCC5C33}"

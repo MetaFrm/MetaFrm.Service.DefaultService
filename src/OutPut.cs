@@ -1,6 +1,6 @@
 ﻿namespace MetaFrm.Service
 {
-    internal class OutPutTable
+    internal class OutPut
     {
         public string? SourceTableName { get; set; }
         public string? SourceParameterName { get; set; }
