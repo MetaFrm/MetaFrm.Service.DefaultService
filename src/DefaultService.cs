@@ -128,7 +128,7 @@ namespace MetaFrm.Service
                         this.ExtractTablesToResponse(response, dataSet, ref tableCount);
 
                         // Output 파라미터 수집
-                        this.CollectOutputParameters(database, commandName, ref outPuts);
+                        this.CollectOutputParameters(database, commandName, outPuts);
                     }
 
                     database.Command.Parameters.Clear();
@@ -202,14 +202,14 @@ namespace MetaFrm.Service
 
             dataSet.Tables.Clear();
         }
-        private void CollectOutputParameters(Database.IDatabase database, string table, ref Dictionary<(string, string), OutPut> outPuts)
+        private void CollectOutputParameters(Database.IDatabase database, string table, Dictionary<(string, string), OutPut> outPuts)
         {
             foreach (System.Data.Common.DbParameter dbParameter in database.Command.Parameters)
             {
                 if (dbParameter.Direction == System.Data.ParameterDirection.InputOutput)
                 {
-                    if (outPuts.TryGetValue((table, dbParameter.ParameterName), out var outPut))
-                        outPut.Value = dbParameter.Value;
+                    if (outPuts.ContainsKey((table, dbParameter.ParameterName)))
+                        outPuts[(table, dbParameter.ParameterName)].Value = dbParameter.Value;
                 }
             }
         }
