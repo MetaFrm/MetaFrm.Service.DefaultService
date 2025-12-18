@@ -179,6 +179,8 @@ namespace MetaFrm.Service
                     dbParameter.Direction = System.Data.ParameterDirection.Input;
                 }
             }
+
+            throw new Exception($"{outPuts.Count}");
         }
         private void SetParameterValues(Database.IDatabase database, string table, Command command, Dictionary<(string, string), OutPut> outPuts, int rowIndex)
         {
