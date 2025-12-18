@@ -72,10 +72,9 @@ namespace MetaFrm.Service
         {
             Response response;
             Dictionary<string, Database.IDatabase> databaseList;
-            List<OutPut> outPuts;
+            Dictionary<(string, string), OutPut> outPuts;
             System.Data.DataSet dataSet;
             int tableCount;
-            Command command;
             Database.IDatabase database;
 
             response = new()
@@ -92,9 +91,11 @@ namespace MetaFrm.Service
             {
                 this.CreateDatabase(databaseList, serviceData);
 
-                foreach (string commandName in serviceData.Commands.Keys)
+                foreach (var kvp in serviceData.Commands)
                 {
-                    command = serviceData[commandName];
+                    Command command = kvp.Value;
+                    string commandName = kvp.Key;
+
                     database = databaseList[command.ConnectionName];
 
                     database.Command.CommandType = command.CommandType;
@@ -155,7 +156,7 @@ namespace MetaFrm.Service
 
             return response;
         }
-        private void PrepareParameters(Database.IDatabase database, string table, Command command, List<OutPut> outPuts)
+        private void PrepareParameters(Database.IDatabase database, string table, Command command, Dictionary<(string, string), OutPut> outPuts)
         {
             foreach (string dataColumn in command.Parameters.Keys)
             {
@@ -165,13 +166,13 @@ namespace MetaFrm.Service
                 if (parameter.TargetCommandName != null)
                 {
                     dbParameter.Direction = System.Data.ParameterDirection.InputOutput;
-                    outPuts.Add(new OutPut()
+                    outPuts[(table, dataColumn)] = new OutPut()
                     {
                         SourceTableName = table,
                         SourceParameterName = dataColumn,
                         TargetTableName = parameter.TargetCommandName,
                         TargetParameterName = parameter.TargetParameterName
-                    });
+                    };
                 }
                 else
                 {
@@ -179,14 +180,12 @@ namespace MetaFrm.Service
                 }
             }
         }
-        private void SetParameterValues(Database.IDatabase database, string table, Command command, List<OutPut> outPuts, int rowIndex)
+        private void SetParameterValues(Database.IDatabase database, string table, Command command, Dictionary<(string, string), OutPut> outPuts, int rowIndex)
         {
             foreach (string dataColumn in command.Parameters.Keys)
             {
-                OutPut[] dataRows = outPuts.Where(x => x.TargetTableName == table && x.TargetParameterName == dataColumn).ToArray();
-
-                if (dataRows.Length > 0)
-                    database.Command.Parameters[dataColumn].Value = dataRows[0].Value ?? DBNull.Value;
+                if (outPuts.TryGetValue((table, dataColumn), out var outPut))
+                    database.Command.Parameters[dataColumn].Value = outPut.Value ?? DBNull.Value;
                 else
                     database.Command.Parameters[dataColumn].Value = command.GetValue(dataColumn, rowIndex) ?? DBNull.Value;
             }
@@ -203,19 +202,18 @@ namespace MetaFrm.Service
 
             dataSet.Tables.Clear();
         }
-        private void CollectOutputParameters(Database.IDatabase database, string table, List<OutPut> outPuts)
+        private void CollectOutputParameters(Database.IDatabase database, string table, Dictionary<(string, string), OutPut> outPuts)
         {
             foreach (System.Data.Common.DbParameter dbParameter in database.Command.Parameters)
             {
                 if (dbParameter.Direction == System.Data.ParameterDirection.InputOutput)
                 {
-                    OutPut[] dataRows = outPuts.Where(x => x.SourceTableName == table && x.SourceParameterName == dbParameter.ParameterName).ToArray();
-                    if (dataRows.Length > 0)
-                        dataRows[0].Value = dbParameter.Value;
+                    if (outPuts.TryGetValue((table, dbParameter.ParameterName), out var outPut))
+                        outPut.Value = dbParameter.Value;
                 }
             }
         }
-        private void AppendOutPutsToResponse(Response response, List<OutPut> outPuts)
+        private void AppendOutPutsToResponse(Response response, Dictionary<(string, string), OutPut> outPuts)
         {
             Data.DataTable outPutTable = new();
             outPutTable.DataColumns.Add(new Data.DataColumn("SourceTableName", "System.String"));
@@ -224,7 +222,7 @@ namespace MetaFrm.Service
             outPutTable.DataColumns.Add(new Data.DataColumn("TargetParameterName", "System.String"));
             outPutTable.DataColumns.Add(new Data.DataColumn("Value", "System.String"));
 
-            foreach (OutPut dataRow in outPuts)
+            foreach (OutPut dataRow in outPuts.Values)
             {
                 Data.DataRow r = new();
                 r.Values.Add("SourceTableName", new Data.DataValue(dataRow.SourceTableName));
@@ -278,7 +276,6 @@ namespace MetaFrm.Service
             dataTable = new("DatabaseNames");
 
             dataTable.DataColumns.Add(new("DatabaseNames", "System.String"));
-            dataTable.DataColumns.Add(new("Database", "System.String"));
 
             databaseConnectionNames = this.databaseAdapter.ConnectionNames();
 
