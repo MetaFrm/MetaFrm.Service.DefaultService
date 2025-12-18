@@ -163,10 +163,10 @@ namespace MetaFrm.Service
                 Service.Parameter parameter = command.Parameters[dataColumn];
                 System.Data.Common.DbParameter dbParameter = database.AddParameter(dataColumn, parameter.DbType, parameter.Size);
 
-                if (parameter.TargetCommandName != null)
+                if (parameter.TargetCommandName != null && parameter.TargetParameterName != null)
                 {
                     dbParameter.Direction = System.Data.ParameterDirection.InputOutput;
-                    outPuts[(table, dataColumn)] = new OutPut()
+                    outPuts[(parameter.TargetCommandName, parameter.TargetParameterName)] = new OutPut()
                     {
                         SourceTableName = table,
                         SourceParameterName = dataColumn,
@@ -179,8 +179,6 @@ namespace MetaFrm.Service
                     dbParameter.Direction = System.Data.ParameterDirection.Input;
                 }
             }
-
-            throw new Exception($"{outPuts.Count}");
         }
         private void SetParameterValues(Database.IDatabase database, string table, Command command, Dictionary<(string, string), OutPut> outPuts, int rowIndex)
         {
