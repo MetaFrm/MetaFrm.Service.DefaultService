@@ -72,7 +72,7 @@ namespace MetaFrm.Service
         {
             Response response;
             Dictionary<string, Database.IDatabase> databaseList;
-            Dictionary<(string, string), OutPut> outPuts;
+            List<OutPut> outPuts;
             System.Data.DataSet dataSet;
             int tableCount;
             Database.IDatabase database;
@@ -156,23 +156,23 @@ namespace MetaFrm.Service
 
             return response;
         }
-        private void PrepareParameters(Database.IDatabase database, string table, Command command, Dictionary<(string, string), OutPut> outPuts)
+        private void PrepareParameters(Database.IDatabase database, string table, Command command, List<OutPut> outPuts)
         {
             foreach (string dataColumn in command.Parameters.Keys)
             {
                 Service.Parameter parameter = command.Parameters[dataColumn];
                 System.Data.Common.DbParameter dbParameter = database.AddParameter(dataColumn, parameter.DbType, parameter.Size);
 
-                if (parameter.TargetCommandName != null && parameter.TargetParameterName != null)
+                if (parameter.TargetCommandName != null)
                 {
                     dbParameter.Direction = System.Data.ParameterDirection.InputOutput;
-                    outPuts[(parameter.TargetCommandName, parameter.TargetParameterName)] = new OutPut()
+                    outPuts.Add(new OutPut()
                     {
                         SourceTableName = table,
                         SourceParameterName = dataColumn,
                         TargetTableName = parameter.TargetCommandName,
                         TargetParameterName = parameter.TargetParameterName
-                    };
+                    });
                 }
                 else
                 {
@@ -180,12 +180,14 @@ namespace MetaFrm.Service
                 }
             }
         }
-        private void SetParameterValues(Database.IDatabase database, string table, Command command, Dictionary<(string, string), OutPut> outPuts, int rowIndex)
+        private void SetParameterValues(Database.IDatabase database, string table, Command command, List<OutPut> outPuts, int rowIndex)
         {
             foreach (string dataColumn in command.Parameters.Keys)
             {
-                if (outPuts.TryGetValue((table, dataColumn), out var outPut))
-                    database.Command.Parameters[dataColumn].Value = outPut.Value ?? DBNull.Value;
+                var dataRows = outPuts.FirstOrDefault(x => x.TargetTableName == table && x.TargetParameterName == dataColumn);
+
+                if (dataRows != null)
+                    database.Command.Parameters[dataColumn].Value = dataRows.Value ?? DBNull.Value;
                 else
                     database.Command.Parameters[dataColumn].Value = command.GetValue(dataColumn, rowIndex) ?? DBNull.Value;
             }
@@ -202,18 +204,19 @@ namespace MetaFrm.Service
 
             dataSet.Tables.Clear();
         }
-        private void CollectOutputParameters(Database.IDatabase database, string table, Dictionary<(string, string), OutPut> outPuts)
+        private void CollectOutputParameters(Database.IDatabase database, string table, List<OutPut> outPuts)
         {
             foreach (System.Data.Common.DbParameter dbParameter in database.Command.Parameters)
             {
                 if (dbParameter.Direction == System.Data.ParameterDirection.InputOutput)
                 {
-                    if (outPuts.ContainsKey((table, dbParameter.ParameterName)))
-                        outPuts[(table, dbParameter.ParameterName)].Value = dbParameter.Value;
+                    var dataRows = outPuts.FirstOrDefault(x => x.SourceTableName == table && x.SourceParameterName == dbParameter.ParameterName);
+                    if (dataRows != null)
+                        dataRows.Value = dbParameter.Value;
                 }
             }
         }
-        private void AppendOutPutsToResponse(Response response, Dictionary<(string, string), OutPut> outPuts)
+        private void AppendOutPutsToResponse(Response response, List<OutPut> outPuts)
         {
             Data.DataTable outPutTable = new();
             outPutTable.DataColumns.Add(new Data.DataColumn("SourceTableName", "System.String"));
@@ -222,7 +225,7 @@ namespace MetaFrm.Service
             outPutTable.DataColumns.Add(new Data.DataColumn("TargetParameterName", "System.String"));
             outPutTable.DataColumns.Add(new Data.DataColumn("Value", "System.String"));
 
-            foreach (OutPut dataRow in outPuts.Values)
+            foreach (OutPut dataRow in outPuts)
             {
                 Data.DataRow r = new();
                 r.Values.Add("SourceTableName", new Data.DataValue(dataRow.SourceTableName));
