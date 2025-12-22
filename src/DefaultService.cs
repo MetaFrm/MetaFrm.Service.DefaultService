@@ -24,7 +24,8 @@ namespace MetaFrm.Service
             }
             catch (Exception exception)
             {
-                Factory.Logger.LogError(exception, "DefaultService : {Message}", exception.Message);
+                if (Factory.Logger.IsEnabled(LogLevel.Error))
+                    Factory.Logger.LogError(exception, "DefaultService : {Message}", exception.Message);
                 this.serviceTimeout = 60000;
             }
 
@@ -58,12 +59,14 @@ namespace MetaFrm.Service
             }
             catch (MetaFrmException exception)
             {
-                Factory.Logger.LogError(exception, "Request(MetaFrmException) : {Message}", exception.Message);
+                if (Factory.Logger.IsEnabled(LogLevel.Error))
+                    Factory.Logger.LogError(exception, "Request(MetaFrmException) : {Message}", exception.Message);
                 return new Response(exception);
             }
             catch (Exception exception)
             {
-                Factory.Logger.LogError(exception, "Request(Exception) : {Message}", exception.Message);
+                if (Factory.Logger.IsEnabled(LogLevel.Error))
+                    Factory.Logger.LogError(exception, "Request(Exception) : {Message}", exception.Message);
                 return new Response(exception);
             }
         }
@@ -150,7 +153,8 @@ namespace MetaFrm.Service
                     }
                     catch (Exception exception)
                     {
-                        Factory.Logger.LogError(exception, "Execute : {Message}", exception.Message);
+                        if (Factory.Logger.IsEnabled(LogLevel.Error))
+                            Factory.Logger.LogError(exception, "Execute : {Message}", exception.Message);
                     }
             }
 
