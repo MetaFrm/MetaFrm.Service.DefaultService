@@ -105,13 +105,13 @@ namespace MetaFrm.Service
 
                     //파라미터 생성
                     if (database.Command.CommandType != System.Data.CommandType.Text)
-                        this.PrepareParameters(database, commandName, command, outPuts);
+                        PrepareParameters(database, commandName, command, outPuts);
 
                     for (int i = 0; i < command.Values.Count; i++)
                     {
                         //파라미터 값 입력
                         if (database.Command.CommandType != System.Data.CommandType.Text)
-                            this.SetParameterValues(database, commandName, command, outPuts, i);
+                            SetParameterValues(database, commandName, command, outPuts, i);
 
                         //프로시져명
                         switch (database.Command.CommandType)
@@ -128,10 +128,10 @@ namespace MetaFrm.Service
 
                         //실행 및 결과 취합
                         database.DataAdapter.Fill(dataSet);
-                        this.ExtractTablesToResponse(response, dataSet, ref tableCount);
+                        ExtractTablesToResponse(response, dataSet, ref tableCount);
 
                         // Output 파라미터 수집
-                        this.CollectOutputParameters(database, commandName, outPuts);
+                        CollectOutputParameters(database, commandName, outPuts);
                     }
 
                     database.Command.Parameters.Clear();
@@ -140,7 +140,7 @@ namespace MetaFrm.Service
                 if (response.DataSet.DataTables.Count < 1 && outPuts.Count < 1)
                     response.DataSet = null;
                 else if (outPuts.Count > 0)
-                    this.AppendOutPutsToResponse(response, outPuts);
+                    AppendOutPutsToResponse(response, outPuts);
 
                 response.Status = Status.OK;
             }
@@ -160,7 +160,7 @@ namespace MetaFrm.Service
 
             return response;
         }
-        private void PrepareParameters(Database.IDatabase database, string table, Command command, List<OutPut> outPuts)
+        private static void PrepareParameters(Database.IDatabase database, string table, Command command, List<OutPut> outPuts)
         {
             foreach (string dataColumn in command.Parameters.Keys)
             {
@@ -184,7 +184,7 @@ namespace MetaFrm.Service
                 }
             }
         }
-        private void SetParameterValues(Database.IDatabase database, string table, Command command, List<OutPut> outPuts, int rowIndex)
+        private static void SetParameterValues(Database.IDatabase database, string table, Command command, List<OutPut> outPuts, int rowIndex)
         {
             foreach (string dataColumn in command.Parameters.Keys)
             {
@@ -196,7 +196,7 @@ namespace MetaFrm.Service
                     database.Command.Parameters[dataColumn].Value = command.GetValue(dataColumn, rowIndex) ?? DBNull.Value;
             }
         }
-        private void ExtractTablesToResponse(Response response, System.Data.DataSet dataSet, ref int tableCount)
+        private static void ExtractTablesToResponse(Response response, System.Data.DataSet dataSet, ref int tableCount)
         {
             foreach (System.Data.DataTable dataTable in dataSet.Tables)
             {
@@ -208,19 +208,18 @@ namespace MetaFrm.Service
 
             dataSet.Tables.Clear();
         }
-        private void CollectOutputParameters(Database.IDatabase database, string table, List<OutPut> outPuts)
+        private static void CollectOutputParameters(Database.IDatabase database, string table, List<OutPut> outPuts)
         {
             foreach (System.Data.Common.DbParameter dbParameter in database.Command.Parameters)
             {
                 if (dbParameter.Direction == System.Data.ParameterDirection.InputOutput)
                 {
                     var dataRows = outPuts.FirstOrDefault(x => x.SourceTableName == table && x.SourceParameterName == dbParameter.ParameterName);
-                    if (dataRows != null)
-                        dataRows.Value = dbParameter.Value;
+                    dataRows?.Value = dbParameter.Value;
                 }
             }
         }
-        private void AppendOutPutsToResponse(Response response, List<OutPut> outPuts)
+        private static void AppendOutPutsToResponse(Response response, List<OutPut> outPuts)
         {
             Data.DataTable outPutTable = new();
             outPutTable.DataColumns.Add(new Data.DataColumn("SourceTableName", "System.String"));
