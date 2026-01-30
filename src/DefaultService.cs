@@ -298,5 +298,12 @@ namespace MetaFrm.Service
 
             return response;
         }
+
+        Task<Response> IService.RequestAsync(ServiceData serviceData)
+        {
+            Response response = ((IService)this).Request(serviceData);
+
+            return Task.FromResult(response);
+        }
     }
 }
