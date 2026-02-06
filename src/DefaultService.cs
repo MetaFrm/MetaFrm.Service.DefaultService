@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Transactions;
+﻿using System.Transactions;
 
 namespace MetaFrm.Service
 {
