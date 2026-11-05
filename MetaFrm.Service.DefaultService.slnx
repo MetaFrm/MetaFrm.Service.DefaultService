@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/build_10.0.yml" />
+  </Folder>
+  <Folder Name="/src/">
+    <File Path="src/DefaultService.cs" />
+    <File Path="src/OutPut.cs" />
+  </Folder>
+  <Folder Name="/솔루션 항목/">
+    <File Path=".gitignore" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="net10/MetaFrm.Service.DefaultService(net10.0).csproj" />
+</Solution>
